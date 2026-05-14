@@ -13,6 +13,7 @@
 
 #---------------------------------- Content ---------------------------------#
 
+<<<<<<< HEAD
 #begin MenuFont.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
@@ -27,3 +28,5 @@
 /processorParam:TextureFormat=Compressed
 /build:TitleFont.spritefont
 
+=======
+>>>>>>> eec6cb9f2a3882f38e6fdb307771b0ec27b9a515
