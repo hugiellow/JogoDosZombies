@@ -144,6 +144,11 @@ namespace JogoDosZombies.Entities
             _reloadSound = reload;
             _hurtSound = hurt;
         }
+
+        public void Heal(int amount)
+        {
+            Health = Math.Min(MaxHealth, Health + amount);
+        }
     }
 
 }

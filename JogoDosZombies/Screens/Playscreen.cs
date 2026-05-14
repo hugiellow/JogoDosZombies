@@ -168,6 +168,7 @@ namespace JogoDosZombies.Screens
 
         private void StartNextWave()
         {
+            _player.Heal(20);
             _waitingForWave = true;
             _waveDelay = WaveDelayTime;
         }
