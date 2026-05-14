@@ -43,7 +43,7 @@ namespace JogoDosZombies.Screens
             sb.Begin();
 
             // Title
-            string title = "ZOMBIE ESCAPE";
+            string title = "JOGOS DOS ZOMBIE";
             var titleSize = _titleFont.MeasureString(title);
             float x = (Game.ScreenWidth - titleSize.X) / 2f;
             float y = Game.ScreenHeight * 0.25f;
