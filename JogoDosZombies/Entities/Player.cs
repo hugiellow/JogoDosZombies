@@ -1,4 +1,5 @@
 ﻿using JogoDosZombies.Entities;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -26,6 +27,10 @@ namespace JogoDosZombies.Entities
         private Texture2D _texture;
         private float _speed = 200f;
         private int _size = 32;
+
+        private SoundEffect _shootSound;
+        private SoundEffect _reloadSound;
+        private SoundEffect _hurtSound;
 
         public Rectangle Bounds => new Rectangle(
             (int)Position.X - _size / 2,
@@ -88,6 +93,7 @@ namespace JogoDosZombies.Entities
         {
             IsReloading = true;
             ReloadTimer = ReloadTime;
+            _reloadSound?.Play();
         }
 
         /// <summary>Returns true and spawns a bullet if the player can shoot.</summary>
@@ -105,12 +111,17 @@ namespace JogoDosZombies.Entities
                 // Muzzle offset (front of sprite)
                 var muzzle = Position + new Vector2(MathF.Cos(Rotation), MathF.Sin(Rotation)) * 24f;
                 bullet = new Bullet(muzzle, Rotation);
+                _shootSound?.Play();
                 return true;
             }
             return false;
         }
 
-        public void TakeDamage(int amount) => Health = Math.Max(0, Health - amount);
+        public void TakeDamage(int amount)
+        {
+            Health = Math.Max(0, Health - amount);
+            _hurtSound?.Play();
+        }
 
         public void Draw(SpriteBatch sb)
         {
@@ -124,16 +135,15 @@ namespace JogoDosZombies.Entities
                 effects: SpriteEffects.None,
                 layerDepth: 0f);
 
-            DrawHealthBar(sb);
+            
         }
 
-        private void DrawHealthBar(SpriteBatch sb)
+        public void LoadSounds(SoundEffect shoot, SoundEffect reload, SoundEffect hurt)
         {
-            int barW = 50, barH = 6;
-            var bg = new Rectangle((int)Position.X - barW / 2, (int)Position.Y - _size / 2 - 12, barW, barH);
-            var fg = new Rectangle(bg.X, bg.Y, (int)(barW * ((float)Health / MaxHealth)), barH);
-            sb.Draw(_texture, bg, Color.DarkRed);
-            sb.Draw(_texture, fg, Color.LimeGreen);
+            _shootSound = shoot;
+            _reloadSound = reload;
+            _hurtSound = hurt;
         }
     }
+
 }
