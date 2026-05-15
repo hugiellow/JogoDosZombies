@@ -21,6 +21,13 @@ namespace JogoDosZombies.Screens
         private SoundEffect _gameOverSound;
         private SoundEffect _victorySound;
 
+        // ---- Câmara ----
+        private Camera _camera;
+
+        // Mundo maior que a janela (requisito 3)
+        private const int WorldWidth = 3200;
+        private const int WorldHeight = 2400;
+
         // ---- Entities ----
         private Player _player;
         private List<Bullet> _bullets = new();
@@ -52,10 +59,15 @@ namespace JogoDosZombies.Screens
             _gameOverSound = Game.Content.Load<SoundEffect>("Sounds/gameover");
             _victorySound = Game.Content.Load<SoundEffect>("Sounds/win");
 
-            _player = new Player(_pixel, new Vector2(Game.ScreenWidth / 2f, Game.ScreenHeight / 2f));
+            // Câmara com dimensões da janela e do mundo
+            _camera = new Camera(Game.ScreenWidth, Game.ScreenHeight, WorldWidth, WorldHeight);
+
+            // Jogador começa no centro do mundo
+            _player = new Player(_pixel, new Vector2(WorldWidth / 2f, WorldHeight / 2f));
             _player.LoadSounds(shootSound, reloadSound, hurtSound);
 
-            _waves = new WaveSystem(_pixel, Game.ScreenWidth, Game.ScreenHeight);
+            // WaveSystem usa dimensões do mundo para spawn nas bordas
+            _waves = new WaveSystem(_pixel, WorldWidth, WorldHeight);
 
             StartNextWave();
         }
@@ -68,7 +80,7 @@ namespace JogoDosZombies.Screens
         // ------------------------------------------------------------------
         public override void Update(GameTime gameTime)
         {
-            // ---- Ecrã final (game over ou vitória) ----
+            // ---- Ecrã final ----
             if (_gameOver || _gameWon)
             {
                 if (!_endSoundPlayed)
@@ -94,8 +106,15 @@ namespace JogoDosZombies.Screens
                 return;
             }
 
+            // ---- Câmara segue o jogador ----
+            _camera.Follow(_player.Position);
+
+            // ---- Converter posição do rato para coordenadas do mundo ----
+            var mouse = Mouse.GetState();
+            Vector2 worldMouse = _camera.ScreenToWorld(new Vector2(mouse.X, mouse.Y));
+
             // ---- Player ----
-            _player.Update(gameTime, Game.ScreenWidth, Game.ScreenHeight);
+            _player.Update(gameTime, WorldWidth, WorldHeight, worldMouse);
 
             if (_player.TryShoot(out Bullet b))
             {
@@ -103,12 +122,11 @@ namespace JogoDosZombies.Screens
                 _bullets.Add(b);
             }
 
-            // ---- Zombies update (move + atacam + projéteis movem-se aqui) ----
+            // ---- Zombies ----
             _waves.Update(gameTime, _player.Position, out int dmg);
             if (dmg > 0) _player.TakeDamage(dmg);
 
             // ---- Colisão: projéteis do Spitter → jogador ----
-            // Feito DEPOIS de _waves.Update para os projéteis já terem a posição certa
             foreach (var z in _waves.Zombies)
             {
                 for (int p = z.Projectiles.Count - 1; p >= 0; p--)
@@ -125,7 +143,7 @@ namespace JogoDosZombies.Screens
             // ---- Colisão: balas do jogador → zombies ----
             for (int i = _bullets.Count - 1; i >= 0; i--)
             {
-                _bullets[i].Update(gameTime, Game.ScreenWidth, Game.ScreenHeight);
+                _bullets[i].Update(gameTime, WorldWidth, WorldHeight);
                 if (!_bullets[i].IsAlive) { _bullets.RemoveAt(i); continue; }
 
                 foreach (var z in _waves.Zombies)
@@ -157,7 +175,6 @@ namespace JogoDosZombies.Screens
             }
         }
 
-        // Pontuação diferente por tipo de zombie
         private int ScoreForZombie(ZombieType type) => type switch
         {
             ZombieType.Fast => 15,
@@ -177,7 +194,9 @@ namespace JogoDosZombies.Screens
         public override void Draw(GameTime gameTime)
         {
             var sb = Game.SpriteBatch;
-            sb.Begin();
+
+            // ---- Desenho do mundo (com transformação da câmara) ----
+            sb.Begin(transformMatrix: _camera.GetTransform());
 
             DrawBackground(sb);
 
@@ -187,6 +206,11 @@ namespace JogoDosZombies.Screens
                 foreach (var b in _bullets) b.Draw(sb);
                 _player.Draw(sb);
             }
+
+            sb.End();
+
+            // ---- HUD e overlays (sem câmara — coordenadas de ecrã fixas) ----
+            sb.Begin();
 
             DrawHUD(sb);
 
@@ -202,14 +226,22 @@ namespace JogoDosZombies.Screens
         // ------------------------------------------------------------------
         private void DrawBackground(SpriteBatch sb)
         {
+            // Fundo cobre o mundo inteiro (não só a janela)
             int tileSize = 64;
-            for (int x = 0; x < Game.ScreenWidth; x += tileSize)
-                for (int y = 0; y < Game.ScreenHeight; y += tileSize)
+            for (int x = 0; x < WorldWidth; x += tileSize)
+                for (int y = 0; y < WorldHeight; y += tileSize)
                 {
                     Color c = ((x / tileSize + y / tileSize) % 2 == 0)
                         ? new Color(30, 30, 30) : new Color(24, 24, 24);
                     sb.Draw(_pixel, new Rectangle(x, y, tileSize, tileSize), c);
                 }
+
+            // Bordas do mundo (linha de aviso)
+            int border = 20;
+            sb.Draw(_pixel, new Rectangle(0, 0, WorldWidth, border), Color.DarkRed * 0.6f);
+            sb.Draw(_pixel, new Rectangle(0, WorldHeight - border, WorldWidth, border), Color.DarkRed * 0.6f);
+            sb.Draw(_pixel, new Rectangle(0, 0, border, WorldHeight), Color.DarkRed * 0.6f);
+            sb.Draw(_pixel, new Rectangle(WorldWidth - border, 0, border, WorldHeight), Color.DarkRed * 0.6f);
         }
 
         private void DrawHUD(SpriteBatch sb)
@@ -236,6 +268,38 @@ namespace JogoDosZombies.Screens
             // Pontuação e onda
             sb.DrawString(_font, $"Pontuação: {_score}    Onda: {_waves.CurrentWave}/{WaveSystem.MaxWaves}",
                 new Vector2(20, 20), Color.White);
+
+            // Mini-mapa (canto superior direito) — mostra posição no mundo
+            DrawMinimap(sb);
+        }
+
+        private void DrawMinimap(SpriteBatch sb)
+        {
+            int mmW = 120, mmH = 90;
+            int mmX = Game.ScreenWidth - mmW - 10;
+            int mmY = 10;
+
+            // Fundo
+            sb.Draw(_pixel, new Rectangle(mmX, mmY, mmW, mmH), Color.Black * 0.6f);
+
+            // Posição do jogador no minimapa
+            float px = _player.Position.X / WorldWidth * mmW;
+            float py = _player.Position.Y / WorldHeight * mmH;
+            sb.Draw(_pixel, new Rectangle(mmX + (int)px - 3, mmY + (int)py - 3, 6, 6), Color.LimeGreen);
+
+            // Zombies no minimapa
+            foreach (var z in _waves.Zombies)
+            {
+                float zx = z.Position.X / WorldWidth * mmW;
+                float zy = z.Position.Y / WorldHeight * mmH;
+                sb.Draw(_pixel, new Rectangle(mmX + (int)zx - 1, mmY + (int)zy - 1, 3, 3), Color.Red);
+            }
+
+            // Borda do minimapa
+            sb.Draw(_pixel, new Rectangle(mmX, mmY, mmW, 1), Color.Gray);
+            sb.Draw(_pixel, new Rectangle(mmX, mmY + mmH - 1, mmW, 1), Color.Gray);
+            sb.Draw(_pixel, new Rectangle(mmX, mmY, 1, mmH), Color.Gray);
+            sb.Draw(_pixel, new Rectangle(mmX + mmW - 1, mmY, 1, mmH), Color.Gray);
         }
 
         private void DrawWaveBanner(SpriteBatch sb)

@@ -19,7 +19,7 @@ namespace JogoDosZombies.Entities
         public int Ammo = 30;
         public int MaxAmmo = 30;
         public float FireCooldown = 0f;
-        public float FireRate = 0.25f;   // seconds between shots
+        public float FireRate = 0.25f;
         public float ReloadTimer = 0f;
         public bool IsReloading = false;
         public float ReloadTime = 1.5f;
@@ -43,11 +43,12 @@ namespace JogoDosZombies.Entities
             Position = startPos;
         }
 
-        public void Update(GameTime gameTime, int screenW, int screenH)
+        // worldW/worldH = limites do mundo; worldMousePos = posição do rato convertida pela câmara
+        public void Update(GameTime gameTime, int worldW, int worldH, Vector2 worldMousePos)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-            // ---- Movement (WASD) ----
+            // ---- Movimento (WASD) ----
             var kb = Keyboard.GetState();
             var dir = Vector2.Zero;
             if (kb.IsKeyDown(Keys.W)) dir.Y -= 1;
@@ -57,13 +58,12 @@ namespace JogoDosZombies.Entities
             if (dir != Vector2.Zero) dir.Normalize();
             Position += dir * _speed * dt;
 
-            // Keep inside screen
-            Position.X = MathHelper.Clamp(Position.X, _size / 2, screenW - _size / 2);
-            Position.Y = MathHelper.Clamp(Position.Y, _size / 2, screenH - _size / 2);
+            // Manter dentro dos limites do mundo (não da janela)
+            Position.X = MathHelper.Clamp(Position.X, _size / 2, worldW - _size / 2);
+            Position.Y = MathHelper.Clamp(Position.Y, _size / 2, worldH - _size / 2);
 
-            // ---- Aim at mouse ----
-            var mouse = Mouse.GetState();
-            Vector2 toMouse = new Vector2(mouse.X, mouse.Y) - Position;
+            // ---- Mira — usa coordenadas do mundo ----
+            Vector2 toMouse = worldMousePos - Position;
             if (toMouse != Vector2.Zero)
                 Rotation = MathF.Atan2(toMouse.Y, toMouse.X);
 
@@ -80,13 +80,8 @@ namespace JogoDosZombies.Entities
                 }
             }
 
-            // Auto-reload when empty
-            if (Ammo <= 0 && !IsReloading)
-                StartReload();
-
-            // Manual reload (R)
-            if (kb.IsKeyDown(Keys.R) && !IsReloading && Ammo < MaxAmmo)
-                StartReload();
+            if (Ammo <= 0 && !IsReloading) StartReload();
+            if (kb.IsKeyDown(Keys.R) && !IsReloading && Ammo < MaxAmmo) StartReload();
         }
 
         public void StartReload()
@@ -96,7 +91,6 @@ namespace JogoDosZombies.Entities
             _reloadSound?.Play();
         }
 
-        /// <summary>Returns true and spawns a bullet if the player can shoot.</summary>
         public bool TryShoot(out Bullet bullet)
         {
             bullet = null;
@@ -108,7 +102,6 @@ namespace JogoDosZombies.Entities
             {
                 Ammo--;
                 FireCooldown = FireRate;
-                // Muzzle offset (front of sprite)
                 var muzzle = Position + new Vector2(MathF.Cos(Rotation), MathF.Sin(Rotation)) * 24f;
                 bullet = new Bullet(muzzle, Rotation);
                 _shootSound?.Play();
@@ -125,7 +118,6 @@ namespace JogoDosZombies.Entities
 
         public void Draw(SpriteBatch sb)
         {
-            // Draw body
             sb.Draw(_texture,
                 destinationRectangle: Bounds,
                 sourceRectangle: null,
@@ -134,8 +126,6 @@ namespace JogoDosZombies.Entities
                 origin: new Vector2(_texture.Width / 2f, _texture.Height / 2f),
                 effects: SpriteEffects.None,
                 layerDepth: 0f);
-
-            
         }
 
         public void LoadSounds(SoundEffect shoot, SoundEffect reload, SoundEffect hurt)
@@ -150,5 +140,4 @@ namespace JogoDosZombies.Entities
             Health = Math.Min(MaxHealth, Health + amount);
         }
     }
-
 }
