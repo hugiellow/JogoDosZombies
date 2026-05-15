@@ -18,9 +18,6 @@ namespace JogoDosZombies.Screens
 
         public override void LoadContent()
         {
-            // We use the built-in Content pipeline fonts.
-            // Add "MenuFont" and "TitleFont" to your Content project,
-            // or replace these with a single font that you DO have.
             _font = Game.Content.Load<SpriteFont>("MenuFont");
             _titleFont = Game.Content.Load<SpriteFont>("TitleFont");
         }
