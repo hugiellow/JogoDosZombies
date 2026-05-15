@@ -295,7 +295,7 @@ JogoDosZombies/
 ---
 
 
-## 📋 Funcionalidades Futuras (ideias)
+## 📋 Funcionalidades Ideias Futuras
 
 - [ ] Power-ups (cura, munição, velocidade)
 - [ ] Armas diferentes (espingarda, metralhadora)
