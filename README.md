@@ -269,7 +269,7 @@ JogoDosZombies/
 │   ├── Camera.cs             # Basicamente é a câmera
 │   └── Game1.cs              # Loop principal, gestão de ecrãs, pausa
 ├── Entities/
-│   ├── Player.cs             # Jogador, movimento, tiro, animações
+│   ├── Player.cs             # Jogador, movimento, tiro
 │   ├── Zombie.cs             # Lógica dos zombies e separação entre eles
 │   ├── ZombieType.cs         # Enum dos tipos de zombie
 │   ├── Bullet.cs             # Projéteis do jogador
