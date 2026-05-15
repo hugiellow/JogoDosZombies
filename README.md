@@ -81,23 +81,6 @@ public static Zombie Create(Texture2D texture, Vector2 pos, ZombieType type, int
 
 ---
 
-## 📈 Dificuldade por Onda
-
-Cada onda que passa, os zombies escalam automaticamente:
-
-| Atributo | Onda 1 | Onda 5 | Onda 10 |
-|---|---|---|---|
-| Zombies spawned | 8 | 20 | 35 |
-| Velocidade | 70 | 110 | 160 |
-| Vida | 75 | 135 | 210 |
-| Dano | 12 | 20 | 30 |
-| Intervalo de spawn | 1.4s | 1.0s | 0.5s |
-
-
-```
-
----
-
 ## 🤖 Separação entre Zombies
 
 Para evitar que os zombies se sobreponham, cada um aplica uma força de repulsão em relação aos vizinhos próximos:
@@ -140,7 +123,7 @@ private void UpdateSpitter(GameTime gameTime, Vector2 playerPos, float dt)
     float dist = Vector2.Distance(Position, playerPos);
 
     // Foge se o jogador está muito perto
-    f (dist < SpitFleeRange)
+    if (dist < SpitFleeRange)
     {
         Vector2 away = Position - playerPos;
         away.Normalize();
