@@ -30,10 +30,6 @@ namespace JogoDosZombies.Entities
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
             Position += new Vector2(MathF.Cos(_rotation), MathF.Sin(_rotation)) * _speed * dt;
 
-            // Morre ao sair do ecrã (assumindo 1280x720 — podes passar screenW/H se preferires)
-            if (Position.X < -20 || Position.X > 1300 ||
-                Position.Y < -20 || Position.Y > 740)
-                IsAlive = false;
         }
 
         public void Draw(SpriteBatch sb, Texture2D texture)
