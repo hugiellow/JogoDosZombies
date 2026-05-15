@@ -1,10 +1,10 @@
 # JogoDosZombies
-Um jogo de sobrevivência top-down desenvolvido em **MonoGame / C#**. Sobrevive a 10 ondas de zombies cada vez mais difíceis, com diferentes tipos de inimigos e mecânicas de combate.
+Um jogo de sobrevivência top-down desenvolvido em **MonoGame / C#**. Sobrevive a 10 ondas de zombies cada vez mais difíceis, com diferentes tipos de inimigos.
 
 ---
 
 ## 🎮 Gameplay
-Controla um sobrevivente visto de cima. O objetivo é simples — elimina todos os zombies de cada onda sem morrer. A dificuldade aumenta progressivamente: os inimigos ficam mais rápidos, mais resistentes e mais variados.
+Controla um sobrevivente visto de cima. O objetivo é simples — elimina todos os zombies de cada onda sem morrer. A dificuldade aumenta progressivamente: os inimigos ficam mais rápidos, mais resistentes.
 
 ---
 
